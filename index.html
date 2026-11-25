@@ -240,7 +240,7 @@ const RENDR_LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt
 const APP_VERSION='1.0';
 /* ================= الإعدادات العامة (عدّلها حسب حاجتك) ================= */
 const SECRET = 'pnReJk/eGurFS9ZlwDNvFeqmXD5IK7A8';  // يجب أن يطابق نفس المفتاح في أداة الإدارة
-const SUPPORT_CONTACT = '';                          // رقم الواتساب أو التواصل لتجديد الاشتراك، مثال: '0770 000 0000'
+const SUPPORT_CONTACT = '07878923366';                          // رقم الواتساب أو التواصل لتجديد الاشتراك، مثال: '0770 000 0000'
 const TYPES = ['تخم','مدالية','سلسلة','محبس','حلقة','تراجي','تراجي أطفال','كردانة','سبحة','مرتعشة','قطعة أخرى'];
 const OTHER = 'قطعة أخرى';
 
@@ -384,7 +384,7 @@ function checkAccess(){
 function showLock(reason){
   $('app').classList.add('hidden');$('lock').classList.remove('hidden');
   $('lockId').textContent=cur.acc.id;
-  $('lockSupport').textContent=SUPPORT_CONTACT?('للتجديد تواصل على: '+SUPPORT_CONTACT):'';
+  $('lockSupport').innerHTML=SUPPORT_CONTACT?`<a class="btn block" style="display:block;text-align:center;text-decoration:none;background:#1f7a4d;color:#fff;margin-top:14px" target="_blank" href="https://wa.me/964${SUPPORT_CONTACT.replace(/[^0-9]/g,'').replace(/^0/,'')}?text=${encodeURIComponent('مرحباً، أريد تجديد اشتراك دفتر الذهب'+String.fromCharCode(10)+'المحل: '+(D.settings.store||cur.acc.store)+String.fromCharCode(10)+'رقم الحساب: '+cur.acc.id)}">تواصل للتجديد عبر واتساب</a><div style="margin-top:8px">أو اتصل على: <span dir="ltr">${SUPPORT_CONTACT}</span></div>`:'';
   if(reason==='clock'){$('lockTitle').textContent='تاريخ الجهاز غير صحيح';$('lockMsg').textContent='تاريخ الجهاز أقدم من آخر استخدام للنظام. صحّح التاريخ والوقت ثم أعد فتح النظام.'}
   else{$('lockTitle').textContent='انتهى الاشتراك';$('lockMsg').textContent='انتهى اشتراك هذا الحساب بتاريخ '+fmtDate(expiry())+'. بياناتك محفوظة وستعود فور التجديد.'}
 }
