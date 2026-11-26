@@ -103,9 +103,24 @@ input[type=date],input[type=month]{color-scheme:dark}
 .sheet input.num{text-align:left;direction:ltr}
 .sheet tr.blank td{background:#fdfbf3!important}
 .sheet tr.blank .rn{color:var(--gold);font-weight:700}
-.sheet .typecell{display:flex}
-.sheet .typecell select{flex:0 0 110px}
-.sheet .typecell input{border-right:1px dashed #d8cfb5}
+.sheet .types{width:100%;min-height:40px;background:transparent;border:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 10px;font-family:inherit;font-size:14px;color:#111;cursor:pointer;text-align:right}
+.sheet .types:focus{outline:2px solid var(--gold);outline-offset:-2px;background:#fffbea}
+.sheet .types .ph{color:#9a9a9a}
+.sheet .types .chev{color:#7a5c17;font-size:11px;flex:0 0 auto}
+.sheet .types b{display:inline-block;background:#f6efd9;color:#7a5c17;border-radius:6px;padding:0 6px;margin-inline-start:4px;font-size:12px}
+.ipop{position:fixed;z-index:90;width:440px;max-width:calc(100vw - 20px);background:var(--panel);border:1px solid var(--gold);border-radius:16px;padding:16px;box-shadow:0 24px 70px rgba(0,0,0,.7)}
+.ipop h4{margin:0 0 10px;color:var(--gold2);font-size:15px}
+.ip-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.ip-row select{flex:1 1 150px}
+.ip-qty{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:0 0 auto}
+.ip-qty button{width:36px;height:40px;background:var(--panel2);border:0;color:var(--gold2);font-size:20px;cursor:pointer}
+.ip-qty input{width:54px;text-align:center;border:0;border-radius:0;padding:8px 2px;-moz-appearance:textfield}
+.ip-qty input::-webkit-inner-spin-button{-webkit-appearance:none}
+.ip-row .other{flex:1 1 100%}
+.ip-del{background:none;border:0;color:#9aa0ab;font-size:16px;cursor:pointer;width:30px;height:40px}
+.ip-del:hover{color:var(--red)}
+.ip-add{width:100%;background:transparent;border:1px dashed var(--gold);color:var(--gold2);border-radius:10px;padding:9px;font-family:inherit;font-size:14px;cursor:pointer;margin:2px 0 12px}
+.ip-sum{color:var(--mut);font-size:13px;margin-bottom:10px}
 .sheet tfoot td{background:#14171d!important;color:#ecebe7;font-weight:500;padding:12px 8px;text-align:center;position:sticky;bottom:0;border-left:1px solid #2b303b}
 .sheet tfoot td.num{color:var(--gold2);font-weight:700}
 .sheet tfoot td.rn{background:#14171d!important}
@@ -464,14 +479,19 @@ async function delEmp(id){if(!await modal('حذف هذا الموظف؟',{ok:'ح
 
 /* ================= المبيعات / المشتريات ================= */
 const kindName=k=>k==='sales'?'المبيعات':'المشتريات';
-const typeLabel=r=>r.type===OTHER?(r.other?`${OTHER} (${r.other})`:OTHER):r.type;
+function itemsOf(r){if(r.items&&r.items.length)return r.items;return r.type?[{type:r.type,qty:1,other:r.other||''}]:[]}
+const itemName=it=>it.type===OTHER?(it.other||OTHER):it.type;
+const pieces=r=>itemsOf(r).reduce((s,it)=>s+(Number(it.qty)||0),0);
+function typeLabel(r){const its=itemsOf(r);if(!its.length)return'';if(its.length===1&&Number(its[0].qty)===1)return itemName(its[0]);return its.map(it=>`${itemName(it)} (${it.qty})`).join(' + ')}
+function typeCellHTML(r){const its=r?itemsOf(r):[];if(!its.length)return '<span class="ph">اختر النوع</span><span class="chev">▼</span>';
+  return '<span>'+its.map(it=>esc(itemName(it))+(Number(it.qty)>1||its.length>1?`<b>×${it.qty}</b>`:'')).join(' + ')+'</span><span class="chev">▼</span>'}
 function filtered(kind){
   const f=filters[kind],q=f.q.trim();
-  return D[kind].filter(r=>(!f.from||r.date>=f.from)&&(!f.to||r.date<=f.to)&&(!f.emp||r.emp===f.emp)&&(!f.type||r.type===f.type)&&
+  return D[kind].filter(r=>(!f.from||r.date>=f.from)&&(!f.to||r.date<=f.to)&&(!f.emp||r.emp===f.emp)&&(!f.type||itemsOf(r).some(it=>it.type===f.type))&&
     (!q||(empName(r.emp)+' '+typeLabel(r)+' '+(r.cust||'')+' '+(r.addr||'')+' '+(r.note||'')).includes(q)))
    .sort((a,b)=>a.date===b.date?a.created-b.created:(a.date<b.date?-1:1));
 }
-function totals(rows){const mg=rows.reduce((s,r)=>s+r.g*1000+r.mg,0);return{count:rows.length,mg,price:rows.reduce((s,r)=>s+r.price,0)}}
+function totals(rows){const mg=rows.reduce((s,r)=>s+r.g*1000+r.mg,0);return{count:rows.reduce((s,r)=>s+pieces(r),0),mg,price:rows.reduce((s,r)=>s+r.price,0)}}
 function renderRecords(kind){
   const f=filters[kind],rows=filtered(kind);
   $('content').innerHTML=`
@@ -513,7 +533,7 @@ function rowHTML(r,n){
     <td class="rn">${r?n:'*'}</td>
     <td><input type="date" data-f="date" value="${v.date||''}"></td>
     <td><select data-f="emp"><option value=""></option>${list.map(e=>`<option value="${e.id}" ${e.id===v.emp?'selected':''}>${esc(e.name)}</option>`).join('')}</select></td>
-    <td><div class="typecell"><select data-f="type"><option value=""></option>${TYPES.map(x=>`<option ${v.type===x?'selected':''}>${x}</option>`).join('')}</select><input data-f="other" placeholder="اكتب الوصف" value="${esc(v.other||'')}" class="${v.type===OTHER?'':'hidden'}"></div></td>
+    <td><button type="button" class="types" data-types>${typeCellHTML(r)}</button></td>
     <td><input data-f="g" type="number" min="0" inputmode="numeric" value="${r?r.g:''}"></td>
     <td><input data-f="mg" type="number" min="0" max="999" inputmode="numeric" value="${r?r.mg:''}"></td>
     <td><input data-f="price" inputmode="numeric" class="num" value="${r&&r.price?fmt(r.price):''}"></td>
@@ -530,29 +550,74 @@ function readVal(f,el){
   return el.value;
 }
 function renumber(){let i=0;$('sheetBody').querySelectorAll('tr:not(.blank) .rn').forEach(td=>td.textContent=++i)}
+function createFromRow(kind,tr){
+  const r={id:uid(),created:Date.now(),date:today(),emp:'',type:'',other:'',items:[],g:0,mg:0,price:0,cust:'',addr:'',note:''};
+  tr.querySelectorAll('[data-f]').forEach(x=>{if(x.value!=='')r[x.dataset.f]=readVal(x.dataset.f,x)});
+  D[kind].push(r);
+  tr.dataset.id=r.id;tr.classList.remove('blank');
+  tr.lastElementChild.innerHTML='<button class="del" title="حذف الصف" data-del>✕</button>';
+  $('sheetBody').insertAdjacentHTML('beforeend',rowHTML(null));
+  renumber();return r;
+}
+/* ===== نافذة الأنواع والعدد ===== */
+function closeItems(){$('itemsPop')?.remove();document.removeEventListener('mousedown',outsideItems,true)}
+function outsideItems(e){const p=$('itemsPop');if(p&&!p.contains(e.target)&&!e.target.closest('[data-types]'))closeItems()}
+function openItems(kind,btn){
+  if(!checkAccess())return;
+  closeItems();
+  const tr=btn.closest('tr');const rec=tr.dataset.id?D[kind].find(x=>x.id===tr.dataset.id):null;
+  let items=rec?itemsOf(rec).map(it=>({...it})):[];if(!items.length)items=[{type:'',qty:1,other:''}];
+  const pop=document.createElement('div');pop.className='ipop';pop.id='itemsPop';document.body.appendChild(pop);
+  const draw=()=>{
+    const tot=items.reduce((s,it)=>s+(Number(it.qty)||0),0);
+    pop.innerHTML=`<h4>القطع بهذه البيعة</h4>`+items.map((it,i)=>`<div class="ip-row">
+      <select data-i="${i}" data-k="type"><option value="">— اختر النوع —</option>${TYPES.map(x=>`<option ${it.type===x?'selected':''}>${x}</option>`).join('')}</select>
+      <div class="ip-qty"><button type="button" data-i="${i}" data-q="-1">−</button><input type="number" min="1" data-i="${i}" data-k="qty" value="${it.qty}"><button type="button" data-i="${i}" data-q="1">+</button></div>
+      ${items.length>1?`<button type="button" class="ip-del" data-del-i="${i}" title="حذف">✕</button>`:''}
+      ${it.type===OTHER?`<input class="other" data-i="${i}" data-k="other" placeholder="وصف القطعة" value="${esc(it.other||'')}">`:''}
+    </div>`).join('')+`<button type="button" class="ip-add" data-add>+ إضافة نوع ثاني</button>
+    <div class="ip-sum">مجموع القطع: <b style="color:var(--gold2)">${tot}</b></div>
+    <div class="err" id="ipErr" style="margin:0 0 8px"></div>
+    <div class="row"><button type="button" class="btn" data-ok>تم</button><button type="button" class="btn dark" data-cancel>إلغاء</button></div>`;
+  };
+  draw();
+  const r0=btn.getBoundingClientRect();const pw=Math.min(440,innerWidth-20);
+  let left=Math.min(Math.max(10,r0.right-pw),innerWidth-pw-10);pop.style.left=left+'px';
+  const ph=pop.offsetHeight;let top=r0.bottom+6;if(top+ph>innerHeight-10)top=Math.max(10,r0.top-ph-6);pop.style.top=top+'px';
+  pop.addEventListener('input',e=>{const i=e.target.dataset.i,k=e.target.dataset.k;if(i===undefined||!k)return;
+    if(k==='qty'){items[i].qty=Math.max(1,parseInt(e.target.value)||1)}else if(k==='other'){items[i].other=e.target.value}});
+  pop.addEventListener('change',e=>{const i=e.target.dataset.i,k=e.target.dataset.k;if(k==='type'){items[i].type=e.target.value;if(items[i].type!==OTHER)items[i].other='';draw();const o=pop.querySelector(`.other[data-i="${i}"]`);o&&o.focus()}
+    if(k==='qty'){draw()}});
+  pop.addEventListener('click',e=>{const t=e.target;
+    if(t.dataset.q){const i=t.dataset.i;items[i].qty=Math.max(1,(Number(items[i].qty)||1)+Number(t.dataset.q));draw()}
+    else if(t.hasAttribute('data-add')){items.push({type:'',qty:1,other:''});draw();pop.querySelectorAll('select')[items.length-1].focus()}
+    else if(t.dataset.delI!==undefined){items.splice(Number(t.dataset.delI),1);draw()}
+    else if(t.hasAttribute('data-cancel'))closeItems();
+    else if(t.hasAttribute('data-ok')){
+      const clean=items.filter(it=>it.type);
+      if(!clean.length)return $('ipErr').textContent='اختر نوع قطعة وحدة على الأقل';
+      if(clean.some(it=>it.type===OTHER&&!String(it.other||'').trim()))return $('ipErr').textContent='اكتب وصف «قطعة أخرى»';
+      clean.forEach(it=>{it.qty=Math.max(1,parseInt(it.qty)||1);it.other=it.type===OTHER?String(it.other).trim():''});
+      const r=rec||createFromRow(kind,tr);
+      r.items=clean;r.type=clean[0].type;r.other=clean[0].other;
+      btn.innerHTML=typeCellHTML(r);save();updateFoot(kind);closeItems();btn.focus();
+    }});
+  pop.addEventListener('keydown',e=>{if(e.key==='Escape'){closeItems();btn.focus()}});
+  setTimeout(()=>document.addEventListener('mousedown',outsideItems,true),0);
+  (pop.querySelector('select'))?.focus();
+}
 function cellChange(kind,el){
   const f=el.dataset.f;if(!f)return;
   if(!checkAccess())return;
   const tr=el.closest('tr');let r;
   if(!tr.dataset.id){
     if(f==='date'||el.value==='')return;          // الصف الجديد يبدأ لما يكتب شي غير التاريخ
-    r={id:uid(),created:Date.now(),date:today(),emp:'',type:'',other:'',g:0,mg:0,price:0,cust:'',addr:'',note:''};
-    tr.querySelectorAll('[data-f]').forEach(x=>{if(x.value!=='')r[x.dataset.f]=readVal(x.dataset.f,x)});
-    D[kind].push(r);
-    tr.dataset.id=r.id;tr.classList.remove('blank');
-    tr.lastElementChild.innerHTML='<button class="del" title="حذف الصف" data-del>✕</button>';
-    $('sheetBody').insertAdjacentHTML('beforeend',rowHTML(null));
-    renumber();
+    r=createFromRow(kind,tr);
   }else{
     r=D[kind].find(x=>x.id===tr.dataset.id);if(!r)return;
     let val=readVal(f,el);
     if(f==='date'&&!val){val=today();el.value=val}
     r[f]=val;
-  }
-  if(f==='type'){
-    const o=tr.querySelector('[data-f=other]');
-    o.classList.toggle('hidden',r.type!==OTHER);
-    if(r.type!==OTHER){r.other='';o.value=''}else setTimeout(()=>o.focus(),0);
   }
   if(f==='mg'&&r.mg>999){r.mg=999;el.value=999;toast('الملغرام من 0 إلى 999')}
   save();updateFoot(kind);
@@ -565,12 +630,14 @@ function bindSheet(kind){
     const el=e.target;
     if(!['Enter','ArrowDown','ArrowUp'].includes(e.key))return;
     if(el.tagName==='SELECT'&&e.key!=='Enter')return;
+    if(el.hasAttribute&&el.hasAttribute('data-types')&&e.key==='Enter'){e.preventDefault();openItems(kind,el);return}
     const td=el.closest('td'),tr=td.parentElement,idx=[...tr.children].indexOf(td);
     cellChange(kind,el);
     const next=e.key==='ArrowUp'?tr.previousElementSibling:tr.nextElementSibling;
-    if(next){e.preventDefault();next.children[idx].querySelector('input:not(.hidden),select')?.focus()}
+    if(next){e.preventDefault();next.children[idx].querySelector('input:not(.hidden),select,button[data-types]')?.focus()}
   });
   body.addEventListener('click',e=>{
+    const tb=e.target.closest('[data-types]');if(tb){openItems(kind,tb);return}
     if(!e.target.hasAttribute('data-del'))return;
     const tr=e.target.closest('tr');
     const i=D[kind].findIndex(r=>r.id===tr.dataset.id);if(i<0)return;
@@ -746,7 +813,7 @@ function savePDF(kind,btn){
     const extra=[f.type?'النوع: '+f.type:''].filter(Boolean).join(' — ');
     const hasNote=rows.some(r=>r.note),hasAddr=rows.some(r=>r.addr);
     const both=hasAddr&&hasNote;
-    const C=[{t:'#',w:22,align:'center',ltr:1},{t:'التاريخ',w:56,align:'center',ltr:1},{t:'النوع',w:both?64:80},
+    const C=[{t:'#',w:22,align:'center',ltr:1},{t:'التاريخ',w:56,align:'center',ltr:1},{t:'النوع',w:both?64:80,wrap:1},
       {t:'غرام',w:34,align:'center',ltr:1},{t:'ملغرام',w:40,align:'center',ltr:1},{t:'السعر (د.ع)',w:66,align:'center',ltr:1}];
     const cust={t:'اسم الزبون'};if(hasAddr||hasNote)cust.w=both?72:86;C.push(cust);
     if(hasAddr)C.push({t:'عنوان الزبون',wrap:1});
@@ -768,7 +835,7 @@ function saveSummaryPDF(btn){
     const mk=list=>list.map(([n,s,p])=>[n,s.count,weightStr(s.mg),fmt(s.price),p.count,weightStr(p.mg),fmt(p.price)]);
     const cols=l=>[{t:l},{t:'قطع مباعة',w:52,align:'center'},{t:'وزن المبيعات',w:78,align:'center'},{t:'مبلغ المبيعات',w:74,align:'center',ltr:1},{t:'قطع مشتراة',w:52,align:'center'},{t:'وزن المشتريات',w:78,align:'center'},{t:'مبلغ المشتريات',w:74,align:'center',ltr:1}];
     const byEmp=D.employees.map(e=>[e.name,totals(S.filter(r=>r.emp===e.id)),totals(P.filter(r=>r.emp===e.id))]).filter(x=>x[1].count||x[2].count);
-    const byType=TYPES.map(ty=>[ty,totals(S.filter(r=>r.type===ty)),totals(P.filter(r=>r.type===ty))]).filter(x=>x[1].count||x[2].count);
+    const byType=typeSummary(S,P);
     return makePDF({
       title:'الملخص',sub:'الفترة: '+(sumMonth?sumMonth.split('-').reverse().join('/'):'كل الفترات'),
       filename:`${D.settings.store} - الملخص - ${sumMonth||'كل الفترات'}`,
@@ -782,12 +849,21 @@ function saveSummaryPDF(btn){
 }
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
 
-/* ================= الملخص ================= */
+/* ================= الملخص */
+function typeSummary(S,P){
+  const one=(rows,ty)=>{let cnt=0;rows.forEach(r=>itemsOf(r).forEach(it=>{if(it.type===ty)cnt+=Number(it.qty)||0}));
+    const single=rows.filter(r=>{const its=itemsOf(r);return its.length===1&&its[0].type===ty});const t=totals(single);t.count=cnt;return t};
+  const out=TYPES.map(ty=>[ty,one(S,ty),one(P,ty)]).filter(x=>x[1].count||x[2].count);
+  const mixed=rows=>{const m=rows.filter(r=>itemsOf(r).length>1);const t=totals(m);return t};
+  const ms=mixed(S),mp=mixed(P);if(ms.count||mp.count)out.push(['بيعات بأكثر من نوع (وزن ومبلغ)',{...ms,count:0},{...mp,count:0}]);
+  return out;
+}
+/* ================= ================= */
 function renderSummary(){
   const inM=r=>!sumMonth||r.date.startsWith(sumMonth);
   const S=D.sales.filter(inM),P=D.purchases.filter(inM),ts=totals(S),tp=totals(P);
   const byEmp=D.employees.map(e=>({e,s:totals(S.filter(r=>r.emp===e.id)),p:totals(P.filter(r=>r.emp===e.id))})).filter(x=>x.s.count||x.p.count);
-  const byType=TYPES.map(ty=>({ty,s:totals(S.filter(r=>r.type===ty)),p:totals(P.filter(r=>r.type===ty))})).filter(x=>x.s.count||x.p.count);
+  const byType=typeSummary(S,P).map(([ty,s,p])=>({ty,s,p}));
   $('content').innerHTML=`
   <div class="row" style="margin-bottom:14px;justify-content:space-between">
     <div class="row"><div><label>الشهر</label><input type="month" value="${sumMonth}" onchange="sumMonth=this.value;renderSummary()"></div>
