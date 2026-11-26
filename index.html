@@ -108,8 +108,10 @@ input[type=date],input[type=month]{color-scheme:dark}
 .sheet .types .ph{color:#9a9a9a}
 .sheet .types .chev{color:#7a5c17;font-size:11px;flex:0 0 auto}
 .sheet .types b{display:inline-block;background:#f6efd9;color:#7a5c17;border-radius:6px;padding:0 6px;margin-inline-start:4px;font-size:12px}
-.ipop{position:fixed;z-index:90;width:440px;max-width:calc(100vw - 20px);background:var(--panel);border:1px solid var(--gold);border-radius:16px;padding:16px;box-shadow:0 24px 70px rgba(0,0,0,.7)}
+.ipop{position:fixed;z-index:90;width:440px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--gold);border-radius:16px;padding:16px;box-shadow:0 24px 70px rgba(0,0,0,.7)}
 .ipop h4{margin:0 0 10px;color:var(--gold2);font-size:15px}
+.ip-list{overflow-y:auto;flex:1 1 auto;min-height:60px;padding-inline-end:4px;margin-bottom:4px}
+.ip-foot{flex:0 0 auto}
 .ip-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 .ip-row select{flex:1 1 150px}
 .ip-qty{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:0 0 auto}
@@ -570,27 +572,31 @@ function openItems(kind,btn){
   const pop=document.createElement('div');pop.className='ipop';pop.id='itemsPop';document.body.appendChild(pop);
   const draw=()=>{
     const tot=items.reduce((s,it)=>s+(Number(it.qty)||0),0);
-    pop.innerHTML=`<h4>القطع بهذه البيعة</h4>`+items.map((it,i)=>`<div class="ip-row">
+    const keepScroll=pop.querySelector('.ip-list')?.scrollTop||0;
+    pop.innerHTML=`<h4>القطع بهذه البيعة</h4><div class="ip-list">`+items.map((it,i)=>`<div class="ip-row">
       <select data-i="${i}" data-k="type"><option value="">— اختر النوع —</option>${TYPES.map(x=>`<option ${it.type===x?'selected':''}>${x}</option>`).join('')}</select>
       <div class="ip-qty"><button type="button" data-i="${i}" data-q="-1">−</button><input type="number" min="1" data-i="${i}" data-k="qty" value="${it.qty}"><button type="button" data-i="${i}" data-q="1">+</button></div>
       ${items.length>1?`<button type="button" class="ip-del" data-del-i="${i}" title="حذف">✕</button>`:''}
       ${it.type===OTHER?`<input class="other" data-i="${i}" data-k="other" placeholder="وصف القطعة" value="${esc(it.other||'')}">`:''}
-    </div>`).join('')+`<button type="button" class="ip-add" data-add>+ إضافة نوع ثاني</button>
+    </div>`).join('')+`</div><div class="ip-foot"><button type="button" class="ip-add" data-add>+ إضافة نوع ثاني</button>
     <div class="ip-sum">مجموع القطع: <b style="color:var(--gold2)">${tot}</b></div>
     <div class="err" id="ipErr" style="margin:0 0 8px"></div>
-    <div class="row"><button type="button" class="btn" data-ok>تم</button><button type="button" class="btn dark" data-cancel>إلغاء</button></div>`;
+    <div class="row"><button type="button" class="btn" data-ok>تم</button><button type="button" class="btn dark" data-cancel>إلغاء</button></div></div>`;
+    const lst=pop.querySelector('.ip-list');lst.scrollTop=keepScroll;
+    place();
   };
+  let anchorTop=null;
+  const place=()=>{if(!pop.isConnected)return;const r0=btn.getBoundingClientRect();const ph=pop.offsetHeight;
+    let top=r0.bottom+6;if(top+ph>innerHeight-10)top=r0.top-ph-6;if(top<10)top=Math.max(10,innerHeight-10-ph);pop.style.top=top+'px'};
+  {const r0=btn.getBoundingClientRect();const pw=Math.min(440,innerWidth-20);pop.style.left=Math.min(Math.max(10,r0.right-pw),innerWidth-pw-10)+'px'}
   draw();
-  const r0=btn.getBoundingClientRect();const pw=Math.min(440,innerWidth-20);
-  let left=Math.min(Math.max(10,r0.right-pw),innerWidth-pw-10);pop.style.left=left+'px';
-  const ph=pop.offsetHeight;let top=r0.bottom+6;if(top+ph>innerHeight-10)top=Math.max(10,r0.top-ph-6);pop.style.top=top+'px';
   pop.addEventListener('input',e=>{const i=e.target.dataset.i,k=e.target.dataset.k;if(i===undefined||!k)return;
     if(k==='qty'){items[i].qty=Math.max(1,parseInt(e.target.value)||1)}else if(k==='other'){items[i].other=e.target.value}});
   pop.addEventListener('change',e=>{const i=e.target.dataset.i,k=e.target.dataset.k;if(k==='type'){items[i].type=e.target.value;if(items[i].type!==OTHER)items[i].other='';draw();const o=pop.querySelector(`.other[data-i="${i}"]`);o&&o.focus()}
     if(k==='qty'){draw()}});
   pop.addEventListener('click',e=>{const t=e.target;
     if(t.dataset.q){const i=t.dataset.i;items[i].qty=Math.max(1,(Number(items[i].qty)||1)+Number(t.dataset.q));draw()}
-    else if(t.hasAttribute('data-add')){items.push({type:'',qty:1,other:''});draw();pop.querySelectorAll('select')[items.length-1].focus()}
+    else if(t.hasAttribute('data-add')){items.push({type:'',qty:1,other:''});draw();const l=pop.querySelector('.ip-list');l.scrollTop=l.scrollHeight;pop.querySelectorAll('select')[items.length-1].focus()}
     else if(t.dataset.delI!==undefined){items.splice(Number(t.dataset.delI),1);draw()}
     else if(t.hasAttribute('data-cancel'))closeItems();
     else if(t.hasAttribute('data-ok')){
