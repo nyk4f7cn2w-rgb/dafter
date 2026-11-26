@@ -722,14 +722,22 @@ function drawFooter(c,i,n){
   ptxt(c,`صفحة ${i} من ${n}`,PM,y,{size:7.5,color:PC.mut,align:'left'});
   ptxt(c,'دفتر الذهب — RENDR',PW/2,y,{size:7,color:'#b3aa9a',align:'center'});
 }
+/* لف النص على أكثر من سطر بالـ PDF (الأنواع تنقسم على " + " حتى ما ينفصل العدد عن اسم القطعة) */
+const WRAP_SIZE=7.8,WRAP_LH=10;
+const _mc=document.createElement('canvas').getContext('2d');
+function wrapLines(txt,maxW){
+  txt=String(txt??'');_mc.font=`400 8.5px ${PFONT}`;_mc.direction='rtl';if(_mc.measureText(txt).width<=maxW)return [txt];
+  _mc.font=`400 ${WRAP_SIZE}px ${PFONT}`;
+  const sep=txt.includes(' + ')?' + ':' ';const parts=txt.split(sep);const lines=[];let cur='';
+  for(const w of parts){const t=cur?cur+sep+w:w;if(!cur||_mc.measureText(t).width<=maxW)cur=t;else{lines.push(sep===' + '?cur+' +':cur);cur=w}}
+  if(cur)lines.push(cur);return lines;
+}
+function rowHeight(cols,r,base){let n=1;cols.forEach((col,i)=>{if(col.wrap)n=Math.max(n,wrapLines(r[i],col.w-8).length)});return n>1?Math.max(base,n*WRAP_LH+8):base}
 function cellText(c,col,v,y,h,o={}){
   const al=col.align||'right';
   const x=al==='center'?col.x+col.w/2:col.x+col.w-6;
-  if(col.wrap){c.font=`400 8.5px ${PFONT}`;const txt=String(v??'');
-    if(c.measureText(txt).width>col.w-8){const ws=txt.split(' ');let best=[txt,''],bd=1e9;
-      for(let i=1;i<ws.length;i++){const a=ws.slice(0,i).join(' '),b=ws.slice(i).join(' ');c.font=`400 7.5px ${PFONT}`;const d=Math.abs(c.measureText(a).width-c.measureText(b).width);if(d<bd){bd=d;best=[a,b]}}
-      ptxt(c,best[0],x,y+h/2-4.6,{size:7.5,color:o.color||PC.ink,align:al,maxW:col.w-8});
-      ptxt(c,best[1],x,y+h/2+4.6,{size:7.5,color:o.color||PC.ink,align:al,maxW:col.w-8});return}}
+  if(col.wrap){const L=wrapLines(v,col.w-8);if(L.length>1){const lh=WRAP_LH,y0=y+h/2-(L.length-1)*lh/2;
+      L.forEach((ln,k)=>ptxt(c,ln,x,y0+k*lh,{size:WRAP_SIZE,color:o.color||PC.ink,align:al}));return}}
   ptxt(c,v,x,y+h/2,{size:o.size||8.5,weight:o.weight||400,color:o.color||PC.ink,align:al,ltr:!!col.ltr&&!o.rtl,maxW:col.w-8});
 }
 function scaleCols(cols){
@@ -794,7 +802,7 @@ async function makePDF({title,sub,blocks,filename}){
       const head=()=>{const yy=y;ops.push(c=>drawTHead(c,cols,yy,HH));y+=HH};
       if(y+HH+RH*2>bottom)newPage();head();
       if(!b.rows.length){const yy=y;ops.push(c=>ptxt(c,'لا توجد بيانات',PW/2,yy+RH/2+4,{align:'center',color:PC.mut,size:8.5}));y+=RH+8}
-      b.rows.forEach((r,i)=>{if(y+RH>bottom){newPage();head()}const yy=y;ops.push(c=>drawTRow(c,cols,r,yy,RH,i%2));y+=RH});
+      b.rows.forEach((r,i)=>{const rh=rowHeight(cols,r,RH);if(y+rh>bottom){newPage();head()}const yy=y;ops.push(c=>drawTRow(c,cols,r,yy,rh,i%2));y+=rh});
       if(b.foot){if(y+RH+3>bottom){newPage();head()}const yy=y;ops.push(c=>drawTFoot(c,cols,b.foot,yy,RH+3));y+=RH+3}
       y+=22;
     }
@@ -818,12 +826,12 @@ function savePDF(kind,btn){
     const f=filters[kind],rows=filtered(kind),t=totals(rows);
     const extra=[f.type?'النوع: '+f.type:''].filter(Boolean).join(' — ');
     const hasNote=rows.some(r=>r.note),hasAddr=rows.some(r=>r.addr);
-    const both=hasAddr&&hasNote;
-    const C=[{t:'#',w:22,align:'center',ltr:1},{t:'التاريخ',w:56,align:'center',ltr:1},{t:'النوع',w:both?64:80,wrap:1},
+    const both=hasAddr&&hasNote,multi=rows.some(r=>itemsOf(r).length>1);
+    const C=[{t:'#',w:22,align:'center',ltr:1},{t:'التاريخ',w:56,align:'center',ltr:1},{t:'النوع',w:multi?(both?112:128):(both?64:80),wrap:1},
       {t:'غرام',w:34,align:'center',ltr:1},{t:'ملغرام',w:40,align:'center',ltr:1},{t:'السعر (د.ع)',w:66,align:'center',ltr:1}];
-    const cust={t:'اسم الزبون'};if(hasAddr||hasNote)cust.w=both?72:86;C.push(cust);
+    const cust={t:'اسم الزبون'};if(hasAddr||hasNote)cust.w=both?(multi?64:72):(multi?76:86);C.push(cust);
     if(hasAddr)C.push({t:'عنوان الزبون',wrap:1});
-    if(hasNote){const n={t:'ملاحظات'};if(hasAddr)n.w=52;C.push(n)}
+    if(hasNote){const n={t:'ملاحظات',wrap:1};if(hasAddr)n.w=multi?46:52;C.push(n)}
     const rowOf=(r,i)=>{const a=[i+1,fmtDate(r.date),typeLabel(r),fmt(r.g),r.mg,fmt(r.price),r.cust||''];if(hasAddr)a.push(r.addr||'');if(hasNote)a.push(r.note||'');return a};
     const foot=[{text:`المجموع (${t.count} قطعة)`,span:3},{text:fmt(Math.floor(t.mg/1000)),ltr:1},{text:String(t.mg%1000),ltr:1},{text:fmt(t.price),ltr:1},{text:'الوزن الكلي '+weightStr(t.mg),span:C.length-6}];
     return makePDF({
