@@ -90,7 +90,7 @@ input[type=date],input[type=month]{color-scheme:dark}
 
 /* ===== Sheet ===== */
 .sheet{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:64vh;color:#111}
-.sheet table{border-collapse:collapse;min-width:1050px;width:100%}
+.sheet table{border-collapse:collapse;min-width:1320px;width:100%}
 .sheet th{background:#f6efd9;color:#3b2c0c;font-weight:700;font-size:13px;padding:11px 6px;border-bottom:2px solid var(--gold);border-left:1px solid #e6dcc0;position:sticky;top:0;z-index:2}
 .sheet td{border-bottom:1px solid #e3e3e3;border-left:1px solid #e3e3e3;padding:0;height:40px;background:#fff}
 .sheet tbody tr:nth-child(even) td{background:#fcfbf7}
@@ -104,7 +104,7 @@ input[type=date],input[type=month]{color-scheme:dark}
 .sheet tr.blank td{background:#fdfbf3!important}
 .sheet tr.blank .rn{color:var(--gold);font-weight:700}
 .sheet .typecell{display:flex}
-.sheet .typecell select{flex:0 0 120px}
+.sheet .typecell select{flex:0 0 110px}
 .sheet .typecell input{border-right:1px dashed #d8cfb5}
 .sheet tfoot td{background:#14171d!important;color:#ecebe7;font-weight:500;padding:12px 8px;text-align:center;position:sticky;bottom:0;border-left:1px solid #2b303b}
 .sheet tfoot td.num{color:var(--gold2);font-weight:700}
@@ -468,7 +468,7 @@ const typeLabel=r=>r.type===OTHER?(r.other?`${OTHER} (${r.other})`:OTHER):r.type
 function filtered(kind){
   const f=filters[kind],q=f.q.trim();
   return D[kind].filter(r=>(!f.from||r.date>=f.from)&&(!f.to||r.date<=f.to)&&(!f.emp||r.emp===f.emp)&&(!f.type||r.type===f.type)&&
-    (!q||(empName(r.emp)+' '+typeLabel(r)+' '+(r.note||'')).includes(q)))
+    (!q||(empName(r.emp)+' '+typeLabel(r)+' '+(r.cust||'')+' '+(r.addr||'')+' '+(r.note||'')).includes(q)))
    .sort((a,b)=>a.date===b.date?a.created-b.created:(a.date<b.date?-1:1));
 }
 function totals(rows){const mg=rows.reduce((s,r)=>s+r.g*1000+r.mg,0);return{count:rows.length,mg,price:rows.reduce((s,r)=>s+r.price,0)}}
@@ -482,7 +482,7 @@ function renderRecords(kind){
       <div><label>إلى تاريخ</label><input type="date" value="${f.to}" onchange="setF('${kind}','to',this.value)"></div>
       <div><label>الموظف</label><select onchange="setF('${kind}','emp',this.value)"><option value="">الكل</option>${D.employees.map(e=>`<option value="${e.id}" ${f.emp===e.id?'selected':''}>${esc(e.name)}</option>`).join('')}</select></div>
       <div><label>النوع</label><select onchange="setF('${kind}','type',this.value)"><option value="">الكل</option>${TYPES.map(x=>`<option ${f.type===x?'selected':''}>${x}</option>`).join('')}</select></div>
-      <div style="flex:1;min-width:150px"><label>بحث</label><input value="${esc(f.q)}" onchange="setF('${kind}','q',this.value)" placeholder="اسم، نوع، ملاحظة..."></div>
+      <div style="flex:1;min-width:150px"><label>بحث</label><input value="${esc(f.q)}" onchange="setF('${kind}','q',this.value)" placeholder="اسم، زبون، نوع، ملاحظة..."></div>
     </div>
     <div class="row" style="margin-top:10px;justify-content:space-between">
       <div class="chips">
@@ -498,7 +498,7 @@ function renderRecords(kind){
     </div>
   </div>
   <div class="sheet"><table>
-    <thead><tr><th class="rn"></th><th style="width:150px">التاريخ</th><th style="width:170px">${kind==='sales'?'الموظف (البائع)':'الموظف (المشتري)'}</th><th style="width:250px">النوع</th><th style="width:90px">غرام</th><th style="width:90px">ملغرام</th><th style="width:150px">السعر (د.ع)</th><th>ملاحظات</th><th style="width:40px"></th></tr></thead>
+    <thead><tr><th class="rn"></th><th style="width:140px">التاريخ</th><th style="width:150px">${kind==='sales'?'الموظف (البائع)':'الموظف (المشتري)'}</th><th style="width:190px">النوع</th><th style="width:70px">غرام</th><th style="width:80px">ملغرام</th><th style="width:130px">السعر (د.ع)</th><th style="width:160px">اسم الزبون</th><th style="width:200px">عنوان الزبون</th><th style="min-width:140px">ملاحظات</th><th style="width:40px"></th></tr></thead>
     <tbody id="sheetBody">${rows.map((r,i)=>rowHTML(r,i+1)).join('')}${rowHTML(null)}</tbody>
     <tfoot><tr id="sheetFoot"></tr></tfoot>
   </table></div>
@@ -506,7 +506,7 @@ function renderRecords(kind){
   bindSheet(kind);updateFoot(kind);
 }
 function rowHTML(r,n){
-  const v=r||{date:today(),emp:'',type:'',other:'',note:''};
+  const v=r||{date:today(),emp:'',type:'',other:'',cust:'',addr:'',note:''};
   let list=activeEmps();
   if(v.emp&&!list.find(e=>e.id===v.emp)){const x=D.employees.find(e=>e.id===v.emp);if(x)list=[...list,x]}
   return `<tr data-id="${r?r.id:''}" class="${r?'':'blank'}">
@@ -517,6 +517,8 @@ function rowHTML(r,n){
     <td><input data-f="g" type="number" min="0" inputmode="numeric" value="${r?r.g:''}"></td>
     <td><input data-f="mg" type="number" min="0" max="999" inputmode="numeric" value="${r?r.mg:''}"></td>
     <td><input data-f="price" inputmode="numeric" class="num" value="${r&&r.price?fmt(r.price):''}"></td>
+    <td><input data-f="cust" value="${esc(v.cust||'')}" placeholder="اسم الزبون"></td>
+    <td><input data-f="addr" value="${esc(v.addr||'')}" placeholder="العنوان"></td>
     <td><input data-f="note" value="${esc(v.note||'')}"></td>
     <td>${r?'<button class="del" title="حذف الصف" data-del>✕</button>':''}</td>
   </tr>`;
@@ -524,7 +526,7 @@ function rowHTML(r,n){
 function readVal(f,el){
   if(f==='g'||f==='mg')return Math.max(0,parseInt(el.value)||0);
   if(f==='price')return parseNum(el.value);
-  if(f==='other'||f==='note')return el.value.trim();
+  if(f==='other'||f==='note'||f==='cust'||f==='addr')return el.value.trim();
   return el.value;
 }
 function renumber(){let i=0;$('sheetBody').querySelectorAll('tr:not(.blank) .rn').forEach(td=>td.textContent=++i)}
@@ -534,7 +536,7 @@ function cellChange(kind,el){
   const tr=el.closest('tr');let r;
   if(!tr.dataset.id){
     if(f==='date'||el.value==='')return;          // الصف الجديد يبدأ لما يكتب شي غير التاريخ
-    r={id:uid(),created:Date.now(),date:today(),emp:'',type:'',other:'',g:0,mg:0,price:0,note:''};
+    r={id:uid(),created:Date.now(),date:today(),emp:'',type:'',other:'',g:0,mg:0,price:0,cust:'',addr:'',note:''};
     tr.querySelectorAll('[data-f]').forEach(x=>{if(x.value!=='')r[x.dataset.f]=readVal(x.dataset.f,x)});
     D[kind].push(r);
     tr.dataset.id=r.id;tr.classList.remove('blank');
@@ -579,7 +581,7 @@ function bindSheet(kind){
 function updateFoot(kind){
   const ids=new Set([...$('sheetBody').querySelectorAll('tr')].map(t=>t.dataset.id).filter(Boolean));
   const t=totals(D[kind].filter(r=>ids.has(r.id)));
-  $('sheetFoot').innerHTML=`<td class="rn"></td><td colspan="3">المجموع (${t.count} قطعة) — الوزن الكلي ${weightStr(t.mg)}</td><td class="num">${fmt(Math.floor(t.mg/1000))}</td><td class="num">${t.mg%1000}</td><td class="num">${fmt(t.price)}</td><td colspan="2"></td>`;
+  $('sheetFoot').innerHTML=`<td class="rn"></td><td colspan="3">المجموع (${t.count} قطعة) — الوزن الكلي ${weightStr(t.mg)}</td><td class="num">${fmt(Math.floor(t.mg/1000))}</td><td class="num">${t.mg%1000}</td><td class="num">${fmt(t.price)}</td><td colspan="4"></td>`;
 }
 function setF(kind,k,v){filters[kind][k]=v;renderTab()}
 function quick(kind,p){
@@ -736,15 +738,21 @@ async function withBusy(btn,fn){const t=btn?.textContent;if(btn){btn.disabled=tr
 function savePDF(kind,btn){
   withBusy(btn,()=>{
     const f=filters[kind],rows=filtered(kind),t=totals(rows);
-    const extra=[f.emp?'الموظف: '+empName(f.emp):'',f.type?'النوع: '+f.type:''].filter(Boolean).join(' — ');
-    const cols=[{t:'#',w:24,align:'center',ltr:1},{t:'التاريخ',w:62,align:'center',ltr:1},{t:kind==='sales'?'الموظف (البائع)':'الموظف (المشتري)',w:84},{t:'النوع',w:112},
-      {t:'غرام',w:42,align:'center',ltr:1},{t:'ملغرام',w:44,align:'center',ltr:1},{t:'السعر (د.ع)',w:80,align:'center',ltr:1},{t:'ملاحظات'}];
+    const extra=[f.type?'النوع: '+f.type:''].filter(Boolean).join(' — ');
+    const hasNote=rows.some(r=>r.note),hasAddr=rows.some(r=>r.addr);
+    const both=hasAddr&&hasNote;
+    const C=[{t:'#',w:22,align:'center',ltr:1},{t:'التاريخ',w:56,align:'center',ltr:1},{t:'النوع',w:both?70:86},
+      {t:'غرام',w:34,align:'center',ltr:1},{t:'ملغرام',w:40,align:'center',ltr:1},{t:'السعر (د.ع)',w:66,align:'center',ltr:1}];
+    const cust={t:'اسم الزبون'};if(hasAddr||hasNote)cust.w=both?78:96;C.push(cust);
+    if(hasAddr)C.push({t:'عنوان الزبون'});
+    if(hasNote){const n={t:'ملاحظات'};if(hasAddr)n.w=60;C.push(n)}
+    const rowOf=(r,i)=>{const a=[i+1,fmtDate(r.date),typeLabel(r),fmt(r.g),r.mg,fmt(r.price),r.cust||''];if(hasAddr)a.push(r.addr||'');if(hasNote)a.push(r.note||'');return a};
+    const foot=[{text:`المجموع (${t.count} قطعة)`,span:3},{text:fmt(Math.floor(t.mg/1000)),ltr:1},{text:String(t.mg%1000),ltr:1},{text:fmt(t.price),ltr:1},{text:'الوزن الكلي '+weightStr(t.mg),span:C.length-6}];
     return makePDF({
       title:'جدول '+kindName(kind),
       sub:'الفترة: '+periodText(f)+(extra?' — '+extra:''),
       filename:`${D.settings.store} - ${kindName(kind)} - ${fmtDate(today()).replace(/\//g,'-')}`,
-      blocks:[{kind:'table',cols,rows:rows.map((r,i)=>[i+1,fmtDate(r.date),empName(r.emp),typeLabel(r),fmt(r.g),r.mg,fmt(r.price),r.note||'']),
-        foot:[{text:`المجموع (${t.count} قطعة) — الوزن الكلي ${weightStr(t.mg)}`,span:4},{text:fmt(Math.floor(t.mg/1000)),ltr:1},{text:String(t.mg%1000),ltr:1},{text:fmt(t.price),ltr:1},{text:''}]}]
+      blocks:[{kind:'table',cols:C,rows:rows.map(rowOf),foot}]
     });
   });
 }
