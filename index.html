@@ -229,7 +229,7 @@ table{width:100%;border-collapse:collapse}
     <button class="btn dark sm" onclick="copyText(cur.acc.id)">نسخ رقم الحساب</button>
     <p class="muted" id="lockSupport"></p>
     <label>كود التفعيل</label>
-    <input id="lockCode" placeholder="20261231-XXXX-XXXX-XXXX" style="direction:ltr;text-align:center">
+    <input id="lockCode" placeholder="الصق كود التفعيل هنا" style="direction:ltr;text-align:center" autocomplete="off">
     <div class="err" id="lockErr"></div>
     <button class="btn block" onclick="activateFromLock()">تفعيل</button>
     <p class="foot"><span class="link" onclick="logout()">تسجيل خروج</span></p>
@@ -256,7 +256,8 @@ table{width:100%;border-collapse:collapse}
 const RENDR_LOGO='data:image/png;base64,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';
 const APP_VERSION='1.0';
 /* ================= الإعدادات العامة (عدّلها حسب حاجتك) ================= */
-const SECRET = 'pnReJk/eGurFS9ZlwDNvFeqmXD5IK7A8';  // يجب أن يطابق نفس المفتاح في أداة الإدارة
+// المفتاح العام للتحقق من أكواد التفعيل (توقيع ECDSA P-256). لا يكفي لتوليد أكواد — المفتاح الخاص موجود فقط بلوحة التحكم.
+const PUBKEY = {"kty":"EC","crv":"P-256","x":"BQmMNY3eCGDlfiGvdXfYZxwy2iFGp5qZTeoBfubyRp8","y":"6mTbU4Hh8aP_o64aDiu9n-dV51h_eZoMP6C0pU6u8TE"};
 const SUPPORT_CONTACT = '07878923366';                          // رقم الواتساب أو التواصل لتجديد الاشتراك، مثال: '0770 000 0000'
 const TYPES = ['تخم','مدالية','سلسلة','محبس','حلقة','تراجي','تراجي أطفال','كردانة','سبحة','مرتعشة','قطعة أخرى'];
 const OTHER = 'قطعة أخرى';
@@ -336,14 +337,15 @@ function newData(store){return{sales:[],purchases:[],employees:[],settings:{stor
 
 /* ================= الدخول والتسجيل ================= */
 function showReg(on){$('loginForm').classList.toggle('hidden',on);$('regForm').classList.toggle('hidden',!on);}
-function doRegister(){
+async function doRegister(){
   const store=$('rStore').value.trim(),user=$('rUser').value.trim().toLowerCase(),p=$('rPass').value,p2=$('rPass2').value;
-  const accId=$('rAcc').value.replace(/\D/g,''),code=$('rCode').value.trim();
+  const accId=$('rAcc').value.replace(/\D/g,''),code=cleanCode($('rCode').value);
   const E=m=>$('rErr').textContent=m;
   if(!accId)return E('اكتب رقم الحساب');
-  const exp=verifyCode(code,accId);
+  await syncTime();
+  const exp=await verifyCode(code,accId);
   if(!exp)return E('رقم الحساب أو كود التفعيل غير صحيح');
-  if(exp<today())return E('كود التفعيل منتهي، اطلب كود جديد');
+  if(exp<licToday())return E('كود التفعيل منتهي، اطلب كود جديد');
   if(Object.values(accounts).some(a=>a.id===accId))return E('هذا الحساب موجود على هذا الجهاز، سجّل دخول بيه');
   if(!store)return E('اكتب اسم المحل');
   if(!/^[a-z0-9_.-]{3,}$/.test(user))return E('اسم المستخدم: 3 أحرف إنكليزية أو أرقام على الأقل بدون فراغات');
@@ -353,7 +355,7 @@ function doRegister(){
   const salt=uid();
   const acc={id:accId,salt,hash:sha256(salt+p),store,created:today(),trialEnd:addDays(today(),-1)};
   accounts[user]=acc;LS.set('jx_accounts',accounts);
-  const nd=newData(store);nd.license={code:code.toUpperCase(),exp,activated:today()};
+  const nd=newData(store);nd.license={code,exp,activated:licToday()};nd.lastSeen=licToday();
   LS.set('jx_data_'+acc.id,nd);
   sessionStorage.setItem('jx_session',user);
   enter(user);
@@ -367,11 +369,13 @@ function doLogin(){
   enter(user);
 }
 function logout(){sessionStorage.removeItem('jx_session');cur=null;D=null;$('app').classList.add('hidden');$('lock').classList.add('hidden');$('auth').classList.remove('hidden');showReg(false)}
-function enter(user){
+async function enter(user){
   cur={username:user,acc:accounts[user]};
   D=LS.get(dataKey(),null)||newData(cur.acc.store);
   if(!D.settings)D.settings=newData(cur.acc.store).settings;
   $('auth').classList.add('hidden');
+  await syncTime();
+  LIC_EXP=D.license?await verifyCode(D.license.code,cur.acc.id):null;   // الاشتراك يتحقق من التوقيع كل مرة، مو من التاريخ المخزون
   if(!checkAccess())return;
   $('lock').classList.add('hidden');
   $('app').classList.remove('hidden');
@@ -380,19 +384,29 @@ function enter(user){
 
 /* ================= الاشتراك ================= */
 function daysText(n){return n<=0?'منتهي':n===1?'اليوم آخر يوم':n===2?'باقي يومين':n<=10?`باقي ${n} أيام`:`باقي ${n} يوم`}
-function daysLeft(){return daysBetween(today(),expiry())+1}  // يشمل اليوم الحالي
-function expiry(){let e=cur.acc.trialEnd;if(D.license&&D.license.exp>e)e=D.license.exp;return e}
-function verifyCode(code,accId){
-  const c=String(code).toUpperCase().replace(/[^0-9A-F]/g,'');
-  if(c.length!==20)return null;
-  const d=c.slice(0,8),sig=c.slice(8);
-  const exp=`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
-  if(isNaN(new Date(exp+'T12:00:00')))return null;
-  const expect=sha256(SECRET+'|'+accId+'|'+exp+'|'+SECRET).slice(0,12).toUpperCase();
-  return sig===expect?exp:null;
+let LIC_EXP=null,SRV_TODAY=null,_pk=null;
+const cleanCode=c=>String(c||'').replace(/\s+/g,'');
+const b64uDec=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s);return Uint8Array.from(b,ch=>ch.charCodeAt(0))};
+async function pubKey(){return _pk||(_pk=await crypto.subtle.importKey('jwk',PUBKEY,{name:'ECDSA',namedCurve:'P-256'},false,['verify']))}
+async function verifyCode(code,accId){
+  try{
+    const m=cleanCode(code).match(/^DFR-(\d{8})-([A-Za-z0-9_-]{80,90})$/);if(!m)return null;
+    const d=m[1],exp=`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;if(isNaN(new Date(exp+'T12:00:00')))return null;
+    const ok=await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},await pubKey(),b64uDec(m[2]),new TextEncoder().encode('DAFTER|'+accId+'|'+exp));
+    return ok?exp:null;
+  }catch(e){return null}
 }
+/* تاريخ موثوق: إذا اكو إنترنت ناخذ التاريخ من السيرفر حتى ما ينفع تغيير ساعة الجهاز */
+async function syncTime(){
+  if(!location.protocol.startsWith('http'))return;
+  try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),3500);
+    const r=await fetch('manifest.webmanifest?ts='+Date.now(),{cache:'no-store',signal:ctl.signal});const h=r.headers.get('Date');if(h){const d=new Date(h);if(!isNaN(d))SRV_TODAY=ymd(d)}}catch(e){}
+}
+const licToday=()=>SRV_TODAY||today();
+function daysLeft(){return daysBetween(licToday(),expiry())+1}  // يشمل اليوم الحالي
+function expiry(){return LIC_EXP||'2000-01-01'}
 function checkAccess(){
-  const t=today();
+  const t=licToday();
   if(D.lastSeen&&t<D.lastSeen){showLock('clock');return false}
   if(t>expiry()){showLock('expired');return false}
   if(!D.lastSeen||t>D.lastSeen){D.lastSeen=t;save()}
@@ -405,16 +419,19 @@ function showLock(reason){
   if(reason==='clock'){$('lockTitle').textContent='تاريخ الجهاز غير صحيح';$('lockMsg').textContent='تاريخ الجهاز أقدم من آخر استخدام للنظام. صحّح التاريخ والوقت ثم أعد فتح النظام.'}
   else{$('lockTitle').textContent='انتهى الاشتراك';$('lockMsg').textContent='انتهى اشتراك هذا الحساب بتاريخ '+fmtDate(expiry())+'. بياناتك محفوظة وستعود فور التجديد.'}
 }
-function applyCode(code){
-  const exp=verifyCode(code,cur.acc.id);
+async function applyCode(code){
+  code=cleanCode(code);await syncTime();
+  const exp=await verifyCode(code,cur.acc.id);
   if(!exp)return 'الكود غير صحيح أو لا يخص هذا الحساب';
-  if(exp<today())return 'هذا الكود منتهي الصلاحية';
-  D.license={code:code.trim().toUpperCase(),exp,activated:today()};save();
+  if(exp<licToday())return 'هذا الكود منتهي الصلاحية';
+  if(LIC_EXP&&exp<LIC_EXP)return 'عندك اشتراك أطول من هذا الكود (ينتهي '+fmtDate(LIC_EXP)+')';
+  D.license={code,exp,activated:licToday()};LIC_EXP=exp;save();
   return null;
 }
-function activateFromLock(){
-  if(D.lastSeen&&today()<D.lastSeen){$('lockErr').textContent='صحّح تاريخ الجهاز أولاً';return}
-  const e=applyCode($('lockCode').value);
+async function activateFromLock(){
+  await syncTime();
+  if(D.lastSeen&&licToday()<D.lastSeen){$('lockErr').textContent='صحّح تاريخ الجهاز أولاً';return}
+  const e=await applyCode($('lockCode').value);
   if(e){$('lockErr').textContent=e;return}
   $('lockErr').textContent='';$('lockCode').value='';
   toast('تم تفعيل الاشتراك حتى '+fmtDate(expiry()));
@@ -935,7 +952,7 @@ function renderSettings(){
   <div class="box"><h3>الاشتراك</h3>
     <p>رقم الحساب: <b class="num" style="color:var(--gold2)">${cur.acc.id}</b> <button class="btn dark sm" onclick="copyText('${cur.acc.id}')">نسخ</button></p>
     <p>الحالة: ${D.license?'مشترك':'فترة تجربة'} — ينتهي في <b class="num">${fmtDate(expiry())}</b> (${daysText(left)})</p>
-    <div class="row"><div style="flex:1;min-width:240px"><label>كود تجديد الاشتراك</label><input id="s_code" style="direction:ltr" placeholder="20261231-XXXX-XXXX-XXXX"></div>
+    <div class="row"><div style="flex:1;min-width:240px"><label>كود تجديد الاشتراك</label><input id="s_code" style="direction:ltr" placeholder="الصق كود التجديد هنا" autocomplete="off"></div>
     <button class="btn" onclick="renewCode()">تفعيل الكود</button></div>
     <div class="err" id="s_codeErr"></div>
   </div>
@@ -993,7 +1010,7 @@ function uploadBanner(inp){
   r.readAsDataURL(file);
 }
 function removeBanner(){D.settings.bannerImg='';save();renderBanner();renderSettings()}
-function renewCode(){const e=applyCode($('s_code').value);if(e){$('s_codeErr').textContent=e;return}renderTop();renderSettings();toast('تم التجديد حتى '+fmtDate(expiry()))}
+async function renewCode(){const e=await applyCode($('s_code').value);if(e){$('s_codeErr').textContent=e;return}renderTop();renderSettings();toast('تم التجديد حتى '+fmtDate(expiry()))}
 function changePass(){
   const acc=cur.acc,E=m=>$('p_err').textContent=m;
   if(sha256(acc.salt+$('p_old').value)!==acc.hash)return E('كلمة المرور الحالية غير صحيحة');
