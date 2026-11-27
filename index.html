@@ -183,6 +183,7 @@ table{width:100%;border-collapse:collapse}
 .paysum span{display:block;color:var(--mut);font-size:12px}.paysum b{font-size:18px;color:var(--gold2)}
 .paylist{max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px 10px}
 .payrow{display:flex;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}.payrow:last-child{border:0}.payrow b{color:var(--green)}.payrow .muted{flex:1}
+.sync{font-size:12.5px;color:var(--mut);cursor:pointer;white-space:nowrap}.sync.ok{color:var(--green)}.sync.off{color:#f3c76b}
 </style>
 </head>
 <body>
@@ -242,6 +243,7 @@ table{width:100%;border-collapse:collapse}
     <input id="lockCode" placeholder="الصق كود التفعيل هنا" style="direction:ltr;text-align:center" autocomplete="off">
     <div class="err" id="lockErr"></div>
     <button class="btn block" onclick="activateFromLock()">تفعيل</button>
+    <button class="btn ghost block" id="lockCheck" style="margin-top:10px" onclick="this.textContent='جارِ التحقق...';syncNow().then(()=>{this.textContent='جدّدت؟ اضغط هنا حتى نتحقق'})">جدّدت؟ اضغط هنا حتى نتحقق</button>
     <p class="foot"><span class="link" onclick="logout()">تسجيل خروج</span></p>
   </div>
   </section>
@@ -250,7 +252,7 @@ table{width:100%;border-collapse:collapse}
 <div id="app" class="hidden">
   <header class="topbar">
     <div class="brand"><div class="mono" id="tbMono"></div><div><div class="store" id="tbStore"></div><div class="sub" id="tbSub"></div></div></div>
-    <div class="top-actions"><span class="user" id="tbUser"></span><button class="btn line sm" onclick="logout()">تسجيل خروج</button></div>
+    <div class="top-actions"><span class="sync" id="syncSt" onclick="syncNow()" title="اضغط للمزامنة الآن"></span><span class="user" id="tbUser"></span><button class="btn line sm" onclick="logout()">تسجيل خروج</button></div>
   </header>
   <div class="wrap">
     <div class="banner" id="banner"></div>
@@ -264,7 +266,7 @@ table{width:100%;border-collapse:collapse}
 
 <script>
 const RENDR_LOGO='data:image/png;base64,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';
-const APP_VERSION='1.1';
+const APP_VERSION='2.0';
 /* ================= الإعدادات العامة (عدّلها حسب حاجتك) ================= */
 // المفتاح العام للتحقق من أكواد التفعيل (توقيع ECDSA P-256). لا يكفي لتوليد أكواد — المفتاح الخاص موجود فقط بلوحة التحكم.
 const PUBKEY = {"kty":"EC","crv":"P-256","x":"BQmMNY3eCGDlfiGvdXfYZxwy2iFGp5qZTeoBfubyRp8","y":"6mTbU4Hh8aP_o64aDiu9n-dV51h_eZoMP6C0pU6u8TE"};
@@ -342,8 +344,117 @@ const filters={sales:{from:'',to:'',emp:'',type:'',q:''},purchases:{from:'',to:'
 let sumMonth=today().slice(0,7);
 
 const dataKey=()=> 'jx_data_'+cur.acc.id;
-function save(){return LS.set(dataKey(),D)}
+function save(){const ok=LS.set(dataKey(),D);if(ok&&CLOUD)schedulePush();return ok}
 function newData(store){return{sales:[],purchases:[],debts:[],employees:[],settings:{store,phone:'',address:'',bannerImg:'',bannerTitle:store,bannerSub:'للذهب والمجوهرات'},license:null,lastSeen:today()}}
+/* ================= قاعدة البيانات السحابية (Supabase) ================= */
+// إذا تركتها فارغة يشتغل النظام محلياً على الجهاز فقط
+const SUPA_URL='https://xdagiksihwfghvsohbck.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkYWdpa3NpaHdmZ2h2c29oYmNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3MDU4MzAsImV4cCI6MjExMTI4MTgzMH0.0kKAHEeJ_Pvz9NKZg9ZTDMYNHEnh8CqJTZF1ne68mZY';
+const CLOUD=!!(SUPA_URL&&SUPA_KEY);
+const emailOf=u=>u+'@dafterapp.online';
+const cloudPass=p=>'Dafter#'+p;           // Supabase يطلب 6 أحرف على الأقل
+let SES=LS.get('jx_cloud',null);
+let syncState='',syncTimer=null,pushing=false,dirty=false,pollT=null;
+const fnv=s=>{let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)}return (h>>>0).toString(36)};
+const stable=o=>Array.isArray(o)?'['+o.map(stable).join(',')+']':(o&&typeof o==='object')?'{'+Object.keys(o).sort().filter(k=>o[k]!==undefined).map(k=>JSON.stringify(k)+':'+stable(o[k])).join(',')+'}':JSON.stringify(o??null);
+const hj=o=>fnv(stable(o));   // ترتيب المفاتيح ثابت حتى يطابق نسخة السيرفر
+const SYNC_KEYS=['sales','purchases','debts','employees'];
+const baseKey=()=>'jx_base_'+cur.acc.id;
+function cloudErr(j,status){const m=(j&&(j.msg||j.error_description||j.message||j.error))||('HTTP '+status);return Object.assign(new Error(m),{status,code:j&&(j.error_code||j.code)})}
+async function sbAuth(path,body,method='POST',auth=false){
+  const h={apikey:SUPA_KEY,'Content-Type':'application/json'};if(auth)h.Authorization='Bearer '+await token();
+  const r=await fetch(SUPA_URL+'/auth/v1/'+path,{method,headers:h,body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw cloudErr(j,r.status);return j;
+}
+function setSes(j){SES={access_token:j.access_token,refresh_token:j.refresh_token,expires_at:Date.now()/1000+(j.expires_in||3600),uid:(j.user&&j.user.id)||(SES&&SES.uid)};LS.set('jx_cloud',SES)}
+async function token(){
+  if(!SES)throw Object.assign(new Error('no session'),{status:401});
+  if(SES.expires_at-60<Date.now()/1000){const r=await fetch(SUPA_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:SES.refresh_token})});
+    const j=await r.json().catch(()=>({}));if(!r.ok){if(r.status===400||r.status===401){SES=null;LS.set('jx_cloud',null)}throw cloudErr(j,r.status)}setSes(j)}
+  return SES.access_token;
+}
+async function sbRest(path,opt={}){
+  const r=await fetch(SUPA_URL+'/rest/v1/'+path,{...opt,headers:{apikey:SUPA_KEY,Authorization:'Bearer '+(opt.anon?SUPA_KEY:await token()),'Content-Type':'application/json',...(opt.headers||{})}});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw cloudErr(j,r.status)}
+  const t=await r.text();return t?JSON.parse(t):null;
+}
+const rpc=(fn,args,anon=false)=>sbRest('rpc/'+fn,{method:'POST',body:JSON.stringify(args||{}),anon});
+async function cloudSignIn(user,pass){setSes(await sbAuth('token?grant_type=password',{email:emailOf(user),password:cloudPass(pass)}))}
+async function cloudSignUp(user,pass){
+  try{const j=await sbAuth('signup',{email:emailOf(user),password:cloudPass(pass)});if(!j.access_token)throw new Error('إعداد السيرفر: لازم تطفي تأكيد الإيميل');setSes(j)}
+  catch(e){if(e.status===422||e.code==='user_already_exists'){try{await cloudSignIn(user,pass);return}catch(e2){throw Object.assign(new Error('اسم المستخدم مأخوذ، اختار اسم ثاني'),{status:422})}}throw e}}
+async function cloudMine(){const a=await sbRest('shops?select=*&owner=eq.'+SES.uid);return a&&a[0]||null}
+const rowOf=()=>({store:D.settings.store||cur.acc.store,acc:cur.acc,data:D});
+const SRV_ERR={bad_code:'كود التفعيل غير مسجّل بالسيرفر لهذا الحساب — راسل الدعم',account_taken:'رقم الحساب هذا مسجّل مسبقاً باسم مستخدم ثاني',already_has_shop:'اسم المستخدم هذا مربوط بحساب ثاني'};
+const srvMsg=e=>SRV_ERR[e.message]||e.message;
+async function cloudCreate(code){const r=await rpc('register_shop',{p_id:cur.acc.id,p_code:code,p_username:cur.username,p_store:D.settings.store||cur.acc.store,p_acc:cur.acc,p_data:D});setBase(r);return r}
+let SRV_EXP=null;
+const srvExpKey=()=>'jx_srvexp_'+cur.acc.id;
+async function fetchLicense(){try{const j=await rpc('my_license');if(j&&j.exp){SRV_EXP=j.exp;LS.set(srvExpKey(),j.exp)}}catch(e){}}
+async function computeLicense(){const a=D.license?await verifyCode(D.license.code,cur.acc.id):null,b=SRV_EXP||LS.get(srvExpKey(),null);LIC_EXP=[a||'',b||''].sort().pop()||null}
+const isNet=e=>!e.status;     // fetch فشل = ماكو إنترنت
+/* ---- دمج ثلاثي: نحافظ على تعديلات هذا الجهاز وتعديلات الأجهزة الثانية ---- */
+function hashesOf(data){const h={};SYNC_KEYS.forEach(k=>(data[k]||[]).forEach(r=>h[k+':'+r.id]=hj(r)));h._settings=hj(data.settings);return h}
+function setBase(row){LS.set(baseKey(),{rev:row.updated_at,h:hashesOf(row.data||{})})}
+function merge3(L,S,B){
+  const out={...S,...L};
+  SYNC_KEYS.forEach(k=>{
+    const lm=new Map((L[k]||[]).map(r=>[r.id,r])),sm=new Map((S[k]||[]).map(r=>[r.id,r])),res=[];
+    const ids=[...(S[k]||[]).map(r=>r.id),...(L[k]||[]).map(r=>r.id).filter(id=>!sm.has(id))];
+    ids.forEach(id=>{const l=lm.get(id),s=sm.get(id),b=B[k+':'+id];
+      if(l&&s)res.push(hj(l)===b?s:l);
+      else if(l){if(b===undefined||hj(l)!==b)res.push(l)}
+      else if(s){if(b===undefined||hj(s)!==b)res.push(s)}});
+    out[k]=res;
+  });
+  out.settings=hj(L.settings)===B._settings?S.settings:L.settings;
+  const le=L.license&&L.license.exp||'',se=S.license&&S.license.exp||'';out.license=se>le?S.license:L.license;
+  out.lastSeen=[L.lastSeen||'',S.lastSeen||''].sort().pop();
+  return out;
+}
+function setSync(st){syncState=st;const el=$('syncSt');if(!el)return;
+  const M={ok:['☁ متزامن','ok'],busy:['☁ جارِ المزامنة…',''],off:['☁ بدون إنترنت — محفوظ على الجهاز','off'],err:['☁ تعذّرت المزامنة','off'],login:['☁ سجّل دخول من جديد للمزامنة','off']};
+  const m=M[st]||['',''];el.textContent=m[0];el.className='sync '+m[1]}
+function schedulePush(){if(!CLOUD||!cur||!SES)return;dirty=true;clearTimeout(syncTimer);syncTimer=setTimeout(()=>push(),1200)}
+async function push(retry=1){
+  if(!CLOUD||!cur||!SES||pushing)return;pushing=true;setSync('busy');
+  try{
+    const base=LS.get(baseKey(),null);dirty=false;
+    const body=rowOf();
+    if(!base){await pullMerge(true);pushing=false;return push(retry)}
+    const a=await sbRest(`shops?id=eq.${encodeURIComponent(cur.acc.id)}&updated_at=eq.${encodeURIComponent(base.rev)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(body)});
+    if(a&&a.length){setBase(a[0]);setSync(dirty?'busy':'ok')}
+    else if(retry>0){await pullMerge(true);pushing=false;return push(retry-1)}   // جهاز ثاني عدّل بنفس الوقت: ندمج ونعيد
+    else setSync('err');
+  }catch(e){setSync(isNet(e)?'off':(e.status===401||!SES?'login':'err'));dirty=true}
+  pushing=false;if(dirty&&syncState==='ok')schedulePush();
+}
+/* يجيب آخر نسخة من السيرفر ويدمجها. يرجّع true إذا تغيّر شي */
+async function pullMerge(force=false){
+  const base=LS.get(baseKey(),null);
+  if(!force&&base){const a=await sbRest(`shops?select=updated_at&id=eq.${encodeURIComponent(cur.acc.id)}`);if(!a||!a.length||a[0].updated_at===base.rev)return false}
+  const a=await sbRest(`shops?select=*&id=eq.${encodeURIComponent(cur.acc.id)}`);const row=a&&a[0];if(!row)return false;
+  const before=hj(D);
+  D=base?merge3(D,row.data,base.h):merge3(D,row.data,hashesOf(row.data));
+  if(!D.debts)D.debts=[];
+  setBase(row);LS.set(dataKey(),D);
+  if(hj(D)!==hj(row.data))dirty=true;
+  return hj(D)!==before;
+}
+async function syncNow(){
+  if(!CLOUD||!cur||!SES||pushing)return;
+  try{setSync('busy');const changed=await pullMerge();if(dirty)await push();else setSync('ok');
+    const oldExp=LIC_EXP;await fetchLicense();await computeLicense();
+    if(!$('lock').classList.contains('hidden')&&licToday()<=expiry()&&!(D.lastSeen&&licToday()<D.lastSeen)){$('lock').classList.add('hidden');$('app').classList.remove('hidden');renderAll();toast('تم تجديد الاشتراك حتى '+fmtDate(expiry()));return}
+    if(oldExp!==LIC_EXP&&!$('app').classList.contains('hidden'))renderTop();
+    if(changed){const ae=document.activeElement;
+      if(!(ae&&ae.closest&&ae.closest('#content')&&/INPUT|SELECT|TEXTAREA/.test(ae.tagName))&&!$('itemsPop')&&!document.querySelector('.modal-bg'))renderAll()}
+  }catch(e){setSync(isNet(e)?'off':(e.status===401||!SES?'login':'err'))}
+}
+function startSync(){clearInterval(pollT);if(!CLOUD)return;pollT=setInterval(syncNow,25000)}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncNow()});
+window.addEventListener('online',()=>syncNow());
+let NEED_CREATE=null;
 
 /* ================= الدخول والتسجيل ================= */
 function showReg(on){$('loginForm').classList.toggle('hidden',on);$('regForm').classList.toggle('hidden',!on);}
@@ -362,6 +473,14 @@ async function doRegister(){
   if(accounts[user])return E('اسم المستخدم موجود مسبقاً');
   if(p.length<4)return E('كلمة المرور 4 أحرف على الأقل');
   if(p!==p2)return E('كلمتا المرور غير متطابقتين');
+  if(CLOUD){E('جارِ إنشاء الحساب...');
+    try{const st=await rpc('check_code',{p_id:accId,p_code:code,p_user:user},true);
+      if(st==='bad')return E('هذا الكود غير مسجّل بالسيرفر — اطلب كود جديد من الدعم');
+      if(st==='taken')return E('رقم الحساب هذا مسجّل مسبقاً — سجّل دخول بيه من «تسجيل الدخول»');
+      if(st==='user')return E('اسم المستخدم مأخوذ، اختار اسم ثاني');
+      await cloudSignUp(user,p);
+    }catch(e){return E(isNet(e)?'تحتاج إنترنت حتى تسوي حساب جديد':'تعذّر إنشاء الحساب: '+e.message)}
+    E('');NEED_CREATE={code,fresh:true}}
   const salt=uid();
   const acc={id:accId,salt,hash:sha256(salt+p),store,created:today(),trialEnd:addDays(today(),-1)};
   accounts[user]=acc;LS.set('jx_accounts',accounts);
@@ -370,26 +489,70 @@ async function doRegister(){
   sessionStorage.setItem('jx_session',user);
   enter(user);
 }
-function doLogin(){
+let loggingIn=false;
+async function doLogin(){
+  if(loggingIn)return;
   accounts=LS.get('jx_accounts',{});
   const user=$('lUser').value.trim().toLowerCase(),p=$('lPass').value,acc=accounts[user];
-  if(!acc||sha256(acc.salt+p)!==acc.hash){$('lErr').textContent='اسم المستخدم أو كلمة المرور غير صحيحة';return}
-  $('lErr').textContent='';$('lPass').value='';
+  const localOk=!!acc&&sha256(acc.salt+p)===acc.hash,E=m=>{$('lErr').textContent=m};
+  if(!user||!p)return E('اكتب اسم المستخدم وكلمة المرور');
+  const legacyCode=()=>{const d=acc&&LS.get('jx_data_'+acc.id,null);return d&&d.license&&d.license.code};
+  if(CLOUD){
+    loggingIn=true;E('جارِ الدخول...');
+    try{
+      try{
+        await cloudSignIn(user,p);
+        const a0=await sbRest('shops?select=id,acc,data,updated_at&owner=eq.'+SES.uid);const row=a0&&a0[0];
+        if(row){
+          const a={...row.acc};if(!a.salt||sha256(a.salt+p)!==a.hash){a.salt=uid();a.hash=sha256(a.salt+p)}a.id=row.id;
+          accounts[user]=a;LS.set('jx_accounts',accounts);
+          if(!LS.get('jx_data_'+a.id,null)){LS.set('jx_data_'+a.id,row.data);LS.set('jx_base_'+a.id,{rev:row.updated_at,h:hashesOf(row.data)})}
+        }else if(localOk&&legacyCode())NEED_CREATE={code:legacyCode()};
+        else return E('هذا الحساب ما مكمّل التسجيل. سوي «إنشاء حساب جديد» بنفس اسم المستخدم وكلمة المرور.');
+      }catch(e){
+        if(isNet(e)){if(!localOk)return E('ماكو إنترنت، وهذا الحساب مو محفوظ على هذا الجهاز');toast('بدون إنترنت — تشتغل على البيانات المحفوظة بالجهاز')}
+        else if(e.status===400){
+          if(!localOk)return E('اسم المستخدم أو كلمة المرور غير صحيحة');
+          // حساب قديم محفوظ على هذا الجهاز بس: نرفعه للسيرفر بكود اشتراكه
+          const code=legacyCode();if(code)
+          try{const st=await rpc('check_code',{p_id:acc.id,p_code:code,p_user:user},true);
+            if(st==='taken'||st==='user')return E('هذا الحساب محفوظ بالسيرفر بكلمة مرور ثانية — جرّب كلمة المرور الأحدث');
+            if(st==='bad'){toast('حسابك يشتغل على هذا الجهاز بس لحد ما ينربط بالسيرفر');}
+            else{await cloudSignUp(user,p);NEED_CREATE={code};}
+          }catch(e2){if(!isNet(e2))return E('تعذّر ربط الحساب بالسيرفر: '+e2.message);toast('بدون إنترنت — راح نربط حسابك بالسيرفر بعدين')}
+        }else return E('خطأ بالسيرفر: '+e.message);
+      }
+    }finally{loggingIn=false}
+  }else if(!localOk)return E('اسم المستخدم أو كلمة المرور غير صحيحة');
+  E('');$('lPass').value='';
   sessionStorage.setItem('jx_session',user);
   enter(user);
 }
-function logout(){sessionStorage.removeItem('jx_session');cur=null;D=null;$('app').classList.add('hidden');$('lock').classList.add('hidden');$('auth').classList.remove('hidden');showReg(false)}
+function logout(){if(CLOUD&&dirty&&SES)push();clearInterval(pollT);SES=null;LS.set('jx_cloud',null);SRV_EXP=null;setSync('');sessionStorage.removeItem('jx_session');cur=null;D=null;$('app').classList.add('hidden');$('lock').classList.add('hidden');$('auth').classList.remove('hidden');showReg(false)}
 async function enter(user){
   cur={username:user,acc:accounts[user]};
   D=LS.get(dataKey(),null)||newData(cur.acc.store);if(!D.debts)D.debts=[];
   if(!D.settings)D.settings=newData(cur.acc.store).settings;
   $('auth').classList.add('hidden');
   await syncTime();
-  LIC_EXP=D.license?await verifyCode(D.license.code,cur.acc.id):null;   // الاشتراك يتحقق من التوقيع كل مرة، مو من التاريخ المخزون
+  SRV_EXP=null;
+  if(CLOUD&&SES){
+    const tmo=()=>new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),7000));
+    if(NEED_CREATE){const nc=NEED_CREATE;
+      try{await Promise.race([cloudCreate(nc.code),tmo()]);NEED_CREATE=null}
+      catch(e){if(!isNet(e)&&e.message!=='timeout'){NEED_CREATE=null;
+        if(nc.fresh){LS.set('jx_data_'+cur.acc.id,null);delete accounts[cur.username];LS.set('jx_accounts',accounts);logout();$('lErr').textContent=srvMsg(e);return}
+        modal('تعذّر ربط الحساب بالسيرفر: '+srvMsg(e))}}
+    }else{try{await Promise.race([pullMerge(),tmo()])}catch(e){}}
+    try{await Promise.race([fetchLicense(),tmo()])}catch(e){}
+  }
+  await computeLicense();   // الاشتراك: توقيع الكود + تاريخ السيرفر من لوحة التحكم
+  if(CLOUD&&SES)startSync();
   if(!checkAccess())return;
   $('lock').classList.add('hidden');
   $('app').classList.remove('hidden');
   renderAll();
+  if(CLOUD){if(SES){if(dirty||NEED_CREATE)syncNow();else setSync('ok')}else setSync('login')}
 }
 
 /* ================= الاشتراك ================= */
@@ -423,6 +586,7 @@ function checkAccess(){
   return true;
 }
 function showLock(reason){
+  $('lockCheck').classList.toggle('hidden',!(CLOUD&&SES));
   $('app').classList.add('hidden');$('lock').classList.remove('hidden');
   $('lockId').textContent=cur.acc.id;
   $('lockSupport').innerHTML=SUPPORT_CONTACT?`<a class="btn block" style="display:block;text-align:center;text-decoration:none;background:#1f7a4d;color:#fff;margin-top:14px" target="_blank" href="https://wa.me/964${SUPPORT_CONTACT.replace(/[^0-9]/g,'').replace(/^0/,'')}?text=${encodeURIComponent('مرحباً، أريد تجديد اشتراك دفتر الذهب'+String.fromCharCode(10)+'المحل: '+(D.settings.store||cur.acc.store)+String.fromCharCode(10)+'رقم الحساب: '+cur.acc.id)}">تواصل للتجديد عبر واتساب</a><div style="margin-top:8px">أو اتصل على: <span dir="ltr">${SUPPORT_CONTACT}</span></div>`:'';
@@ -1186,11 +1350,13 @@ function uploadBanner(inp){
 }
 function removeBanner(){D.settings.bannerImg='';save();renderBanner();renderSettings()}
 async function renewCode(){const e=await applyCode($('s_code').value);if(e){$('s_codeErr').textContent=e;return}renderTop();renderSettings();toast('تم التجديد حتى '+fmtDate(expiry()))}
-function changePass(){
+async function changePass(){
   const acc=cur.acc,E=m=>$('p_err').textContent=m;
   if(sha256(acc.salt+$('p_old').value)!==acc.hash)return E('كلمة المرور الحالية غير صحيحة');
   const n=$('p_new').value;if(n.length<4)return E('4 أحرف على الأقل');if(n!==$('p_new2').value)return E('غير متطابقة');
-  acc.salt=uid();acc.hash=sha256(acc.salt+n);accounts[cur.username]=acc;LS.set('jx_accounts',accounts);renderSettings();toast('تم تغيير كلمة المرور');
+  if(CLOUD){if(!SES)return E('سجّل خروج ودخول من جديد مع إنترنت حتى تغيّر كلمة المرور');
+    try{E('جارِ التغيير...');await sbAuth('user',{password:cloudPass(n)},'PUT',true)}catch(e){return E(isNet(e)?'تحتاج إنترنت لتغيير كلمة المرور':'تعذّر التغيير: '+e.message)}}
+  acc.salt=uid();acc.hash=sha256(acc.salt+n);accounts[cur.username]=acc;LS.set('jx_accounts',accounts);save();renderSettings();toast('تم تغيير كلمة المرور');
 }
 function exportBackup(){
   const b={app:'jewelry-system',v:1,user:cur.username,account:cur.acc,data:D,at:new Date().toISOString()};
