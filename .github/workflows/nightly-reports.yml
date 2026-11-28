@@ -1,6 +1,9 @@
 name: تقارير تليكرام الليلية
 
 on:
+  push:
+    branches: [main]
+    paths: [".github/run-now"]
   schedule:
     - cron: "0 19 * * *"   # 10:00 بالليل بتوقيت بغداد
   workflow_dispatch:
