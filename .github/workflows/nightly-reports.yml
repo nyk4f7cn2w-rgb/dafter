@@ -5,7 +5,8 @@ on:
     branches: [main]
     paths: [".github/run-now"]
   schedule:
-    - cron: "0 19 * * *"   # 10:00 بالليل بتوقيت بغداد
+    - cron: "25 18 * * *"  # يبدي 9:25 وينتظر لحد 10:00 بالضبط (بغداد)
+    - cron: "10 19 * * *"  # احتياطي إذا GitHub أخّر الأول — ما يتكرر الإرسال
   workflow_dispatch:
     inputs:
       day:
@@ -54,6 +55,7 @@ jobs:
           DAY: ${{ inputs.day }}
           ONLY_SHOP: ${{ inputs.only_shop }}
           MONTHLY: ${{ inputs.monthly && '1' || '' }}
+          WAIT_22: ${{ github.event_name == 'schedule' && '1' || '' }}
           FORCE: ${{ (inputs.force || contains(github.event.head_commit.message, '[force]')) && '1' || '' }}
         run: node nightly.mjs
       - name: Keep schedule alive

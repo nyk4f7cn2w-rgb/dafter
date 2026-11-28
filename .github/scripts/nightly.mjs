@@ -6,6 +6,12 @@ const SB = process.env.SB_URL, SK = process.env.SB_SERVICE_KEY, TG = process.env
 if (!SB || !SK || !TG) { console.error("missing secrets"); process.exit(1); }
 const APP = process.env.APP_URL || "https://dafterapp.online/";
 
+// الجدولة تبدي قبل الوقت (GitHub يتأخر أحياناً) وتنتظر لحد 10:00 بالليل بتوقيت بغداد
+if (process.env.WAIT_22 === "1") {
+  const now = new Date(), target = new Date(now); target.setUTCHours(19, 0, 0, 0);
+  const ms = target - now;
+  if (ms > 0 && ms < 50 * 60e3) { console.log(`waiting ${Math.round(ms / 1000)}s until 22:00 Baghdad`); await new Promise((r) => setTimeout(r, ms)); }
+}
 const baghdadToday = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
 const DAY = process.env.DAY || baghdadToday();
 const FORCE = process.env.FORCE === "1";
