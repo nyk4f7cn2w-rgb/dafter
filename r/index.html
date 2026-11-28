@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>تقرير — دفتر الذهب</title>
+<meta property="og:title" content="تقرير محلك من دفتر الذهب 📒">
+<meta property="og:description" content="اضغط حتى تفتح ملف التقرير PDF">
+<meta property="og:image" content="https://dafterapp.online/og-image.jpg">
+<link rel="icon" href="/favicon.ico">
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#030303;color:#e9d9a8;font-family:system-ui,Tahoma,sans-serif;text-align:center}a{color:#d4af37}</style>
+</head>
+<body>
+<div><img src="/icon-v2-192.png" width="72" height="72" alt=""><p id="m">جارِ فتح التقرير...</p></div>
+<script>
+const f=new URLSearchParams(location.search).get('f')||'';
+if(/^[a-f0-9]{32}$/.test(f)){const u='https://xdagiksihwfghvsohbck.supabase.co/storage/v1/object/public/reports/'+f+'.pdf';location.replace(u);document.getElementById('m').innerHTML='إذا ما انفتح التقرير <a href="'+u+'">اضغط هنا</a>'}
+else document.getElementById('m').textContent='الرابط غير صحيح';
+</script>
+</body>
+</html>
