@@ -54,7 +54,7 @@ jobs:
           DAY: ${{ inputs.day }}
           ONLY_SHOP: ${{ inputs.only_shop }}
           MONTHLY: ${{ inputs.monthly && '1' || '' }}
-          FORCE: ${{ inputs.force && '1' || '' }}
+          FORCE: ${{ (inputs.force || contains(github.event.head_commit.message, '[force]')) && '1' || '' }}
         run: node nightly.mjs
       - name: Keep schedule alive
         if: always()
