@@ -1,0 +1,60 @@
+name: تقارير تليكرام الليلية
+
+on:
+  schedule:
+    - cron: "0 19 * * *"   # 10:00 بالليل بتوقيت بغداد
+  workflow_dispatch:
+    inputs:
+      day:
+        description: "اليوم (YYYY-MM-DD) — فارغ = اليوم"
+        required: false
+      only_shop:
+        description: "رقم حساب محل واحد للتجربة — فارغ = الكل"
+        required: false
+      monthly:
+        description: "إرسال التقرير الشهري أيضاً"
+        type: boolean
+        default: false
+      force:
+        description: "إعادة الإرسال حتى لو انرسل قبل"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: nightly-reports
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        working-directory: .github/scripts
+        run: npm init -y >/dev/null && npm i --no-audit --no-fund playwright-core@1.49
+      - name: Send reports
+        working-directory: .github/scripts
+        env:
+          SB_URL: https://xdagiksihwfghvsohbck.supabase.co
+          SB_SERVICE_KEY: ${{ secrets.SB_SERVICE_KEY }}
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          DAY: ${{ inputs.day }}
+          ONLY_SHOP: ${{ inputs.only_shop }}
+          MONTHLY: ${{ inputs.monthly && '1' || '' }}
+          FORCE: ${{ inputs.force && '1' || '' }}
+        run: node nightly.mjs
+      - name: Keep schedule alive
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/nightly-reports.yml/enable" || true
